@@ -60,20 +60,29 @@ router.post('/', async (req, res) => {
       error: err
     });
   }
-  
 }); 
 
 // Update an idea
 router.put('/:id', async (req, res) => { 
   try {
-    const updateIdea = await Idea.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
+    const idea = await Idea.findById(req.params.id);
+    if (idea.username === req.body.username) {
+      const updateIdea = await Idea.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true
+      });
+      return res.status(200).json({
+        success: true,
+        data: updateIdea
+      });
+    } 
+
+    // Usernames does not match
+    res.status(403).json({
+      success: false,
+      error: 'You are not authorized to update this resource'
     });
-    res.status(200).json({
-      success: true,
-      data: updateIdea
-    });
+    
     
   } catch(err) {
     console.log(err);
@@ -87,15 +96,25 @@ router.put('/:id', async (req, res) => {
 // Delete idea
 router.delete('/:id', async (req, res) => {
   try {
-    await Idea.findByIdAndDelete(req.params.id);
-    res.status(200).json({
-      status: 'Success',
-      data: null
-    });
+    const idea = await Idea.findById(req.params.id);
+    // Match the usernames
+    if (idea.username === req.body.username) {
+        await Idea.findByIdAndDelete(req.params.id);
+        return res.status(200).json({
+        status: 'Success',
+        data: null
+      });
+    }
 
+    // Usernames do not match
+    res.status(403).json({
+      success: false,
+      error: 'You are not authorized to delete this resource'
+    });
+    
   } catch(err) {
     console.log(err);
-    res.status(404).json({
+    res.status(500).json({
       success: false,
       error: err
     });
